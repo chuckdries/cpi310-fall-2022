@@ -24,6 +24,7 @@ app.get("/", async (req, res) => {
 
 app.post("/message", async (req, res) => {
   const db = await dbPromise;
+  console.log('received new message', req.body.messageBody);
   await db.run("INSERT INTO Message (body) VALUES (?);", req.body.messageBody);
   res.redirect("/");
 });
