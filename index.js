@@ -2,6 +2,7 @@ import express from "express";
 import { engine } from "express-handlebars";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
+import bcrypt from "bcrypt";
 
 const dbPromise = open({
   filename: "./data/messageboard.db",
@@ -18,15 +19,33 @@ app.set("views", "./views");
 
 app.get("/", async (req, res) => {
   const db = await dbPromise;
-  const messages = await db.all('SELECT * FROM Message;');
+  const messages = await db.all("SELECT * FROM Message;");
   res.render("home", { messages });
+});
+
+app.get("/register", (req, res) => {
+  res.render("register");
 });
 
 app.post("/message", async (req, res) => {
   const db = await dbPromise;
-  console.log('received new message', req.body.messageBody);
+  console.log("received new message", req.body.messageBody);
   await db.run("INSERT INTO Message (body) VALUES (?);", req.body.messageBody);
   res.redirect("/");
+});
+
+app.post("/register", async (req, res) => {
+  const { username, password } = req.body;
+
+  const passwordHash = await bcrypt.hash(password, 10);
+
+  const db = await dbPromise;
+  const meta = await db.run("INSERT INTO User (username, passwordHash) VALUES (?, ?);", [
+    username,
+    passwordHash,
+  ]);
+  console.log('meta', meta);
+  res.send('registration successful')
 });
 
 async function setup() {
