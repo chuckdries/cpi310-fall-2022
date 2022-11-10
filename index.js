@@ -4,6 +4,7 @@ import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
+import { v4 as uuidv4 } from "uuid";
 
 const dbPromise = open({
   filename: "./data/messageboard.db",
@@ -19,13 +20,39 @@ app.engine("handlebars", engine());
 app.set("view engine", "handlebars");
 app.set("views", "./views");
 
+app.use(async (req, res, next) => {
+  if (!req.cookies.authToken) {
+    return next();
+  }
+  const db = await dbPromise;
+  try {
+    const token = await db.get(
+      "SELECT * FROM AuthToken WHERE token=?;",
+      req.cookies.authToken
+    );
+    if (!token) {
+      return next();
+    }
+    const user = await db.get(
+      "SELECT username, id FROM User WHERE id=?;",
+      token.userId
+    );
+    if (!user) {
+      return next();
+    }
+    req.user = user;
+    next();
+  } catch (e) {
+    console.log("something went wrong looking up the user from authtoken", e);
+    next();
+  }
+});
+
 app.get("/", async (req, res) => {
   const db = await dbPromise;
   const messages = await db.all("SELECT * FROM Message;");
-  if (req.cookies.userId) {
-    console.log('user is registered as user ', req.cookies.userId);
-  }
-  res.render("home", { messages });
+  console.log("user is", req.user);
+  res.render("home", { messages, user: req.user.username });
 });
 
 app.get("/register", (req, res) => {
@@ -58,8 +85,13 @@ app.post("/register", async (req, res) => {
       "INSERT INTO User (username, passwordHash) VALUES (?, ?);",
       [username, passwordHash]
     );
+    const authToken = uuidv4();
     console.log("meta", meta);
-    res.cookie("userId", meta.lastID);
+    await db.run("INSERT INTO AuthToken (token, userId) VALUES (?, ?);", [
+      authToken,
+      meta.lastID,
+    ]);
+    res.cookie("authToken", authToken);
     res.redirect("/");
   } catch (e) {
     if (
@@ -69,6 +101,7 @@ app.post("/register", async (req, res) => {
       res.render("register", { error: "Username taken" });
       return;
     }
+    console.log("registration error", e);
     res.status(500);
     res.render("register", { error: "Something went wrong" });
     return;
