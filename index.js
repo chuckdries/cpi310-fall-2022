@@ -3,6 +3,7 @@ import { engine } from "express-handlebars";
 import sqlite3 from "sqlite3";
 import { open } from "sqlite";
 import bcrypt from "bcrypt";
+import cookieParser from "cookie-parser";
 
 const dbPromise = open({
   filename: "./data/messageboard.db",
@@ -12,6 +13,7 @@ const dbPromise = open({
 const app = express();
 
 app.use(express.urlencoded());
+app.use(cookieParser());
 
 app.engine("handlebars", engine());
 app.set("view engine", "handlebars");
@@ -20,6 +22,9 @@ app.set("views", "./views");
 app.get("/", async (req, res) => {
   const db = await dbPromise;
   const messages = await db.all("SELECT * FROM Message;");
+  if (req.cookies.userId) {
+    console.log('user is registered as user ', req.cookies.userId);
+  }
   res.render("home", { messages });
 });
 
@@ -54,7 +59,8 @@ app.post("/register", async (req, res) => {
       [username, passwordHash]
     );
     console.log("meta", meta);
-    res.redirect('/');
+    res.cookie("userId", meta.lastID);
+    res.redirect("/");
   } catch (e) {
     if (
       e.message === "SQLITE_CONSTRAINT: UNIQUE constraint failed: User.username"
