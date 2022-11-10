@@ -37,15 +37,36 @@ app.post("/message", async (req, res) => {
 app.post("/register", async (req, res) => {
   const { username, password } = req.body;
 
+  if (typeof password !== "string" || password.length < 6) {
+    res.status(400);
+    res.render("register", {
+      error: "Password must be a string of at least 6 characters ",
+    });
+    return;
+  }
+
   const passwordHash = await bcrypt.hash(password, 10);
 
   const db = await dbPromise;
-  const meta = await db.run("INSERT INTO User (username, passwordHash) VALUES (?, ?);", [
-    username,
-    passwordHash,
-  ]);
-  console.log('meta', meta);
-  res.send('registration successful')
+  try {
+    const meta = await db.run(
+      "INSERT INTO User (username, passwordHash) VALUES (?, ?);",
+      [username, passwordHash]
+    );
+    console.log("meta", meta);
+    res.redirect('/');
+  } catch (e) {
+    if (
+      e.message === "SQLITE_CONSTRAINT: UNIQUE constraint failed: User.username"
+    ) {
+      res.status(400);
+      res.render("register", { error: "Username taken" });
+      return;
+    }
+    res.status(500);
+    res.render("register", { error: "Something went wrong" });
+    return;
+  }
 });
 
 async function setup() {

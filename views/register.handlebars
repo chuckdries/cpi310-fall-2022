@@ -1,5 +1,11 @@
 <h1>Register</h1>
 
+{{#if error}}
+<div style="background: red; color: white; padding: 1em">
+  {{error}}
+</div>
+{{/if}}
+
 <a href="/">home</a>
 
 <form action="/register" method="post">
