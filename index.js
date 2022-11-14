@@ -52,7 +52,8 @@ app.get("/", async (req, res) => {
   const db = await dbPromise;
   const messages = await db.all("SELECT * FROM Message;");
   console.log("user is", req.user);
-  res.render("home", { messages, user: req.user.username });
+
+  res.render("home", { messages, user: req.user?.username });
 });
 
 app.get("/register", (req, res) => {
@@ -106,6 +107,39 @@ app.post("/register", async (req, res) => {
     res.render("register", { error: "Something went wrong" });
     return;
   }
+});
+
+app.get("/login", (req, res) => {
+  res.render("login");
+});
+
+app.post("/login", async (req, res) => {
+  const db = await dbPromise;
+  const { username, password } = req.body;
+  if (!username || !username.length || !password || !password.length) {
+    return res.render("login", { error: "missing parameter" });
+  }
+  const maybeUser = await db.get(
+    "SELECT * FROM User WHERE username = ?",
+    username
+  );
+  if (!maybeUser) {
+    return res.render("login", { error: "username or password is incorrect" });
+  }
+  const passwordMatches = await bcrypt.compare(
+    password,
+    maybeUser.passwordHash
+  );
+  if (!passwordMatches) {
+    return res.render("login", { error: "username or password is incorrect" });
+  }
+  const authToken = uuidv4();
+  await db.run("INSERT INTO AuthToken (token, userId) VALUES (?, ?);", [
+    authToken,
+    maybeUser.id,
+  ]);
+  res.cookie("authToken", authToken);
+  res.redirect("/");
 });
 
 async function setup() {

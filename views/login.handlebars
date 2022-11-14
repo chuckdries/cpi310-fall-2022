@@ -1,0 +1,21 @@
+<h1>Login</h1>
+
+{{#if error}}
+<div style="background: red; color: white; padding: 1em">
+  {{error}}
+</div>
+{{/if}}
+
+<a href="/">home</a>
+
+<form action="/login" method="post">
+  <label>
+    username
+    <input type="text" name="username" />
+  </label>
+  <label>
+    password
+    <input type="password" name="password" />
+  </label>
+  <button type="submit">login</button>
+</form>
