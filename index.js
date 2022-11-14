@@ -57,6 +57,9 @@ app.get("/", async (req, res) => {
 });
 
 app.get("/register", (req, res) => {
+  if (req.user) {
+    return res.redirect("/");
+  }
   res.render("register");
 });
 
@@ -110,6 +113,9 @@ app.post("/register", async (req, res) => {
 });
 
 app.get("/login", (req, res) => {
+  if (req.user) {
+    return res.redirect("/");
+  }
   res.render("login");
 });
 

@@ -6,6 +6,7 @@
   {{/each}}
 </ul>
 
+{{#if user}}
 <form action="/message" method="post">
   <label>
     message
@@ -13,6 +14,7 @@
   </label>
   <button type="submit">post</button>
 </form>
-
+{{else}}
 <a href="/register">register</a>
 <a href="/login">login</a>
+{{/if}}
