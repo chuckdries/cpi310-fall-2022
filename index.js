@@ -50,9 +50,9 @@ app.use(async (req, res, next) => {
 
 app.get("/", async (req, res) => {
   const db = await dbPromise;
-  const messages = await db.all("SELECT * FROM Message;");
-  console.log("user is", req.user);
-
+  const messages = await db.all(
+    "SELECT Message.id, Message.body, User.username as author FROM Message INNER JOIN User ON Message.authorId = User.id;"
+  );
   res.render("home", { messages, user: req.user?.username });
 });
 
@@ -64,9 +64,16 @@ app.get("/register", (req, res) => {
 });
 
 app.post("/message", async (req, res) => {
+  if (!req.user) {
+    res.status(401);
+    return res.send("User must be logged in to post messages");
+  }
   const db = await dbPromise;
   console.log("received new message", req.body.messageBody);
-  await db.run("INSERT INTO Message (body) VALUES (?);", req.body.messageBody);
+  await db.run("INSERT INTO Message (body, authorId) VALUES (?, ?);", [
+    req.body.messageBody,
+    req.user.id,
+  ]);
   res.redirect("/");
 });
 
