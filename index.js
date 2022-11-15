@@ -155,6 +155,20 @@ app.post("/login", async (req, res) => {
   res.redirect("/");
 });
 
+app.get('/logout', async (req, res) => {
+  if (!req.user || !req.cookies.authToken) {
+    return res.redirect('/')
+  }
+  const db = await dbPromise;
+  try {
+    await db.run("DELETE FROM AuthToken WHERE token = ?", req.cookies.authToken)
+  } catch (e) {
+    console.log('logout failed', e);
+  }
+  res.clearCookie('authToken');
+  res.redirect('/')
+})
+
 async function setup() {
   const db = await dbPromise;
   db.migrate();
