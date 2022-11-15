@@ -7,7 +7,7 @@ import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
 
 const dbPromise = open({
-  filename: "./data/messageboard.db",
+  filename: process.env.DATABASE_URL || "./data/messageboard.db",
   driver: sqlite3.Database,
 });
 
@@ -172,8 +172,8 @@ app.get('/logout', async (req, res) => {
 async function setup() {
   const db = await dbPromise;
   db.migrate();
-  app.listen(3000, () => {
-    console.log("listening on http://localhost:3000");
+  app.listen(process.env.PORT || 3000, () => {
+    console.log(`listening on http://localhost:${process.env.PORT || 3000}`);
   });
 }
 setup();
