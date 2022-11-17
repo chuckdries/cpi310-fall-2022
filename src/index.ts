@@ -6,6 +6,22 @@ import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
 
+interface User {
+  id: number;
+  username: string;
+  passwordHash?: string;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: User
+    }
+  }
+}
+
+
+
 const dbPromise = open({
   filename: process.env.DATABASE_URL || "./data/messageboard.db",
   driver: sqlite3.Database,
@@ -107,7 +123,7 @@ app.post("/register", async (req, res) => {
     res.redirect("/");
   } catch (e) {
     if (
-      e.message === "SQLITE_CONSTRAINT: UNIQUE constraint failed: User.username"
+      (e as any).message === "SQLITE_CONSTRAINT: UNIQUE constraint failed: User.username"
     ) {
       res.status(400);
       res.render("register", { error: "Username taken" });
