@@ -20,8 +20,6 @@ declare global {
   }
 }
 
-
-
 const dbPromise = open({
   filename: process.env.DATABASE_URL || "./data/messageboard.db",
   driver: sqlite3.Database,
@@ -65,9 +63,15 @@ app.use(async (req, res, next) => {
   }
 });
 
+interface MessageWithAuthor {
+  id: number;
+  body: string;
+  author: string;
+}
+
 app.get("/", async (req, res) => {
   const db = await dbPromise;
-  const messages = await db.all(
+  const messages = await db.all<MessageWithAuthor[]>(
     "SELECT Message.id, Message.body, User.username as author FROM Message INNER JOIN User ON Message.authorId = User.id;"
   );
   res.render("home", { messages, user: req.user?.username });
