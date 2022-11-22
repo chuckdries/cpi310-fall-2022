@@ -13,6 +13,19 @@ interface MessageWithAuthor {
 
 // type CURRENT_PAGE = 'home' | 'login' | 'register'
 
+interface MessageProps {
+  author: string;
+  body: string;
+}
+
+function Message(props: MessageProps) {
+  return (
+    <li>
+      {props.author}: {props.body}
+    </li>
+  );
+}
+
 function App() {
   const [messages, setMessages] = useState([] as MessageWithAuthor[]);
   const [user, setUser] = useState<null | string>(null);
@@ -24,12 +37,12 @@ function App() {
         setUser(data.user);
       }
     } catch (e) {
-      console.error('failed to test for user', e)
+      console.error("failed to test for user", e);
     }
   }, []);
 
   useEffect(() => {
-    testLogin()
+    testLogin();
     axios.get("http://localhost:3000/messages").then(({ data }) => {
       setMessages(data.messages);
     });
@@ -39,9 +52,11 @@ function App() {
     <div className="App">
       <ul>
         {messages.map((message) => (
-          <li key={message.id}>
-            {message.author}: {message.body}
-          </li>
+          <Message
+            key={message.id}
+            author={message.author}
+            body={message.body}
+          />
         ))}
       </ul>
       {user ? (
