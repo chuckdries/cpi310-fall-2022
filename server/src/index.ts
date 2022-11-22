@@ -5,7 +5,7 @@ import { open } from "sqlite";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
-import cors from 'cors';
+import cors from "cors";
 
 interface User {
   id: number;
@@ -28,11 +28,14 @@ const dbPromise = open({
 
 const app = express();
 
-app.use(cors({
-  origin: true,
-}));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use("/static", express.static("static"));
-app.use(express.urlencoded());
+app.use(express.json());
 app.use(cookieParser());
 
 app.engine("handlebars", engine());
@@ -73,7 +76,7 @@ interface MessageWithAuthor {
   author: string;
 }
 
-app.get("/", async (req, res) => {
+app.get("/messages", async (req, res) => {
   const db = await dbPromise;
   const messages = await db.all<MessageWithAuthor[]>(
     "SELECT Message.id, Message.body, User.username as author FROM Message INNER JOIN User ON Message.authorId = User.id;"
@@ -95,12 +98,13 @@ app.post("/message", async (req, res) => {
     return res.send("User must be logged in to post messages");
   }
   const db = await dbPromise;
-  console.log("received new message", req.body.messageBody);
+  console.log("received new message", req.body.message);
   await db.run("INSERT INTO Message (body, authorId) VALUES (?, ?);", [
-    req.body.messageBody,
+    req.body.message,
     req.user.id,
   ]);
-  res.redirect("/");
+  // res.redirect("/");
+  res.send('success')
 });
 
 app.post("/register", async (req, res) => {
@@ -157,21 +161,27 @@ app.post("/login", async (req, res) => {
   const db = await dbPromise;
   const { username, password } = req.body;
   if (!username || !username.length || !password || !password.length) {
-    return res.render("login", { error: "missing parameter" });
+    // return res.render("login", { error: "missing parameter" });
+    res.status(400);
+    return res.json({ error: "missing parameter" });
   }
   const maybeUser = await db.get(
     "SELECT * FROM User WHERE username = ?",
     username
   );
   if (!maybeUser) {
-    return res.render("login", { error: "username or password is incorrect" });
+    // return res.render("login", { error: "username or password is incorrect" });
+    res.status(400);
+    return res.json({ error: "username or password is incorrect" });
   }
   const passwordMatches = await bcrypt.compare(
     password,
     maybeUser.passwordHash
   );
   if (!passwordMatches) {
-    return res.render("login", { error: "username or password is incorrect" });
+    // return res.render("login", { error: "username or password is incorrect" });
+    res.status(400);
+    return res.json({ error: "username or password is incorrect" });
   }
   const authToken = uuidv4();
   await db.run("INSERT INTO AuthToken (token, userId) VALUES (?, ?);", [
@@ -179,7 +189,7 @@ app.post("/login", async (req, res) => {
     maybeUser.id,
   ]);
   res.cookie("authToken", authToken);
-  res.redirect("/");
+  res.json({ username: maybeUser.username });
 });
 
 app.get("/logout", async (req, res) => {
