@@ -85,6 +85,13 @@ app.get("/messages", async (req, res) => {
   res.json({ messages });
 });
 
+app.get("/user", (req, res) => {
+  if (req.user) {
+    return res.json({ user: req.user });
+  }
+  res.json({});
+});
+
 app.get("/register", (req, res) => {
   if (req.user) {
     return res.redirect("/");
@@ -104,7 +111,7 @@ app.post("/message", async (req, res) => {
     req.user.id,
   ]);
   // res.redirect("/");
-  res.send('success')
+  res.send("success");
 });
 
 app.post("/register", async (req, res) => {

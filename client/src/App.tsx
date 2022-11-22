@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Login from "./Login";
 import MessageBox from "./MessageBox";
 
@@ -17,7 +17,19 @@ function App() {
   const [messages, setMessages] = useState([] as MessageWithAuthor[]);
   const [user, setUser] = useState<null | string>(null);
 
+  const testLogin = useCallback(async () => {
+    try {
+      const { data } = await axios.get("http://localhost:3000/user");
+      if (data.user) {
+        setUser(data.user);
+      }
+    } catch (e) {
+      console.error('failed to test for user', e)
+    }
+  }, []);
+
   useEffect(() => {
+    testLogin()
     axios.get("http://localhost:3000/messages").then(({ data }) => {
       setMessages(data.messages);
     });
@@ -32,7 +44,11 @@ function App() {
           </li>
         ))}
       </ul>
-      {user ? <MessageBox /> : <Login onLoginSuccess={(username) => setUser(username)} />}
+      {user ? (
+        <MessageBox />
+      ) : (
+        <Login onLoginSuccess={(username) => setUser(username)} />
+      )}
     </div>
   );
 }
