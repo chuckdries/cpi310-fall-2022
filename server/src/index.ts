@@ -5,6 +5,7 @@ import { open } from "sqlite";
 import bcrypt from "bcrypt";
 import cookieParser from "cookie-parser";
 import { v4 as uuidv4 } from "uuid";
+import cors from 'cors';
 
 interface User {
   id: number;
@@ -15,7 +16,7 @@ interface User {
 declare global {
   namespace Express {
     interface Request {
-      user?: User
+      user?: User;
     }
   }
 }
@@ -27,6 +28,9 @@ const dbPromise = open({
 
 const app = express();
 
+app.use(cors({
+  origin: true,
+}));
 app.use("/static", express.static("static"));
 app.use(express.urlencoded());
 app.use(cookieParser());
@@ -74,7 +78,8 @@ app.get("/", async (req, res) => {
   const messages = await db.all<MessageWithAuthor[]>(
     "SELECT Message.id, Message.body, User.username as author FROM Message INNER JOIN User ON Message.authorId = User.id;"
   );
-  res.render("home", { messages, user: req.user?.username });
+  // res.render("home", { messages, user: req.user?.username });
+  res.json({ messages });
 });
 
 app.get("/register", (req, res) => {
@@ -127,7 +132,8 @@ app.post("/register", async (req, res) => {
     res.redirect("/");
   } catch (e) {
     if (
-      (e as any).message === "SQLITE_CONSTRAINT: UNIQUE constraint failed: User.username"
+      (e as any).message ===
+      "SQLITE_CONSTRAINT: UNIQUE constraint failed: User.username"
     ) {
       res.status(400);
       res.render("register", { error: "Username taken" });

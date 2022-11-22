@@ -1,34 +1,32 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import './App.css'
+import axios from "axios";
+import { useEffect, useState } from "react";
+
+interface MessageWithAuthor {
+  id: number;
+  body: string;
+  author: string;
+}
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [messages, setMessages] = useState([] as MessageWithAuthor[]);
+
+  useEffect(() => {
+    axios.get("http://localhost:3000/").then(({ data }) => {
+      setMessages(data.messages);
+    });
+  }, []);
 
   return (
     <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <ul>
+        {messages.map((message) => (
+          <li>
+            {message.author}: {message.body}
+          </li>
+        ))}
+      </ul>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
